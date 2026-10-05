@@ -131,6 +131,28 @@ void uart_put_u32(uint32_t n)
     }
 }
 
+void uart_put_hex_digit(uint8_t n)
+{
+    if (n < 10)
+    {
+        uart_putc('0' + n);
+    }
+    else
+    {
+        uart_putc('A' + (n - 10));
+    }
+}
+
+void uart_put_hex16(uint16_t n)
+{
+    uart_puts("0x");
+
+    uart_put_hex_digit((n >> 12) & 0xF);
+    uart_put_hex_digit((n >> 8)  & 0xF);
+    uart_put_hex_digit((n >> 4)  & 0xF);
+    uart_put_hex_digit(n & 0xF);
+}
+
 void shell_init()
 {
     uart_puts("Shell initing...\r\n");
@@ -194,6 +216,15 @@ void cmd_uptime(void)
     uart_puts("uptime = ");
     uart_put_u32(snapshot);
     uart_puts(" ms\r\n");
+}
+
+void cmd_sp(void)
+{
+    uint16_t sp = SP;
+
+    uart_puts("SP = ");
+    uart_put_hex16(sp);
+    uart_puts("\r\n");
 }
 
 int parse_args(char *line, char **argv, int max_args)
@@ -260,6 +291,10 @@ void shell_execute(char *cmd)
     else if (strcmp(arg[0], "uptime") == 0)
     {
         cmd_uptime();
+    }
+    else if (strcmp(arg[0], "sp") == 0)
+    {
+        cmd_sp();
     }
     else
     {
