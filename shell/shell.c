@@ -36,6 +36,9 @@ void cmd_help(void)
     uart_puts("led on\r\n");
     uart_puts("led off\r\n");
     uart_puts("tick\r\n");
+    uart_puts("uptime\r\n");
+    uart_puts("sp\r\n");
+    uart_puts("stack\r\n");
 }
 
 void cmd_led(uint8_t argc, char **argv)
@@ -70,9 +73,9 @@ void cmd_tick(void)
     {
         snapshot = tick;
     }
-    uart_puts("uptime = ");
+    uart_puts("tick = ");
     uart_put_u32(snapshot);
-    uart_puts("ms\r\n");
+    uart_puts("\r\n");
 }
 
 void cmd_uptime(void)

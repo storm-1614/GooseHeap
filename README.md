@@ -30,8 +30,8 @@ Windows 下感觉很麻烦，没探索。
     * 直接通过 avr-libc 写寄存器操作硬件
     * 实现 GPIO 初始化控制
 - UART 驱动
-    * 9600 band, 8N1
-    * 基于 USART_RX 和 USART_UDRE 中断的搜发
+    * 9600 baud, 8N1
+    * 基于 USART_RX 和 USART_UDRE 中断的收发
     * RX/TX 环形缓冲区
 - 系统定时器
     * 使用 Timer1
@@ -40,11 +40,13 @@ Windows 下感觉很麻烦，没探索。
 - UART 交互式 Shell
     * 支持基于行的命令输入与回显
     * 支持命令参数解析
+    * 打印 SP 寄存器
+    * 函数调用栈实验
 - 任务切换
     * 独立任务栈
     * 初始化、保存、恢复 CPU context
     * 最简的 `os_start_first`, `os_yield()`  
-    * 两任务循环调度
+    * 三任务协作式时间片轮转调度
 
 ## 计划
 
