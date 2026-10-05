@@ -11,7 +11,8 @@ AVRDUDE = avrdude
 
 CFLAGS = -mmcu=$(MCU) -DF_CPU=$(F_CPU) -Os -Wall -Wextra
 
-SRC = $(TARGET).c
+SRC = main.c uart/uart.c timer/timer.c task/task.c shell/shell.c kernel/port.c
+HEADERS = include/bool.h uart/uart.h timer/timer.h task/task.h shell/shell.h kernel/port.h
 ELF = $(TARGET).elf
 HEX = $(TARGET).hex
 
@@ -19,8 +20,8 @@ HEX = $(TARGET).hex
 
 all: $(HEX)
 
-$(ELF): $(SRC)
-	$(CC) $(CFLAGS) $< -o $@
+$(ELF): $(SRC) $(HEADERS)
+	$(CC) $(CFLAGS) $(SRC) -o $@
 
 $(HEX): $(ELF)
 	$(OBJCOPY) -O ihex -R .eeprom $< $@
