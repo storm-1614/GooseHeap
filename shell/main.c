@@ -148,8 +148,8 @@ void uart_put_hex16(uint16_t n)
     uart_puts("0x");
 
     uart_put_hex_digit((n >> 12) & 0xF);
-    uart_put_hex_digit((n >> 8)  & 0xF);
-    uart_put_hex_digit((n >> 4)  & 0xF);
+    uart_put_hex_digit((n >> 8) & 0xF);
+    uart_put_hex_digit((n >> 4) & 0xF);
     uart_put_hex_digit(n & 0xF);
 }
 
@@ -227,6 +227,41 @@ void cmd_sp(void)
     uart_puts("\r\n");
 }
 
+__attribute__((noinline)) void bar(void)
+{
+    uint16_t sp = SP;
+
+    uart_puts("bar:   ");
+    uart_put_hex16(sp);
+    uart_puts("\r\n");
+}
+
+__attribute__((noinline)) void foo(void)
+{
+    uint16_t sp = SP;
+
+    uart_puts("foo:   ");
+    uart_put_hex16(sp);
+    uart_puts("\r\n");
+
+    bar();
+
+    uart_puts("bar returned\r\n");
+}
+
+void cmd_stack(void)
+{
+    uint16_t sp = SP;
+
+    uart_puts("cmd:  ");
+    uart_put_hex16(sp);
+    uart_puts("\r\n");
+
+    foo();
+
+    uart_puts("foo returned\r\n");
+}
+
 int parse_args(char *line, char **argv, int max_args)
 {
     int count = 0;
@@ -295,6 +330,10 @@ void shell_execute(char *cmd)
     else if (strcmp(arg[0], "sp") == 0)
     {
         cmd_sp();
+    }
+    else if (strcmp(arg[0], "stack") == 0)
+    {
+        cmd_stack();
     }
     else
     {
