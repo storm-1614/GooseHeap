@@ -1,10 +1,13 @@
-# GooseHeap Shell
+# GooseHeap OS
 
-只是一个 Shell……  
-在 Arduino UNO(ATmega328P) 拿裸机 C 语言在 avr-libc 的基础上，基于 UART 做了个串口 Shell。  
+GooseHeap(鹅堆) OS 一个运行在 Arduino UNO (ATmega328P ) 上的两个任务轮转的最简 RTOS。  
+使用裸机 C + avr-libc 开发。  
 
-未来可能慢慢做成类似 FreeRTOS 那样的吧，最大憧憬。  
+> 最开始：  
+> 在 Arduino UNO(ATmega328P) 拿裸机 C 语言在 avr-libc 的基础上，基于 UART 做了个串口 Shell。  
+> 未来可能慢慢做成类似 FreeRTOS 那样的吧，最大憧憬。  
 
+慢慢有了 RTOS 雏形。初步实现两个任务的调度。  
 ## 开发环境
 我是用的 ArchLinux，其他发行版我让 chatGPT 写的……  
 
@@ -19,7 +22,7 @@ sudo apt update
 sudo apt install gcc-avr avr-libc binutils-avr avrdude make
 ```
 
-Windows 感觉下很麻烦，没探索。  
+Windows 下感觉很麻烦，没探索。  
 
 ## 已完成
 - AVR 裸机 C 开发
@@ -37,7 +40,11 @@ Windows 感觉下很麻烦，没探索。
 - UART 交互式 Shell
     * 支持基于行的命令输入与回显
     * 支持命令参数解析
-
+- 任务切换
+    * 独立任务栈
+    * 初始化、保存、恢复 CPU context
+    * 最简的 `os_start_first`, `os_yield()`  
+    * 两任务循环调度
 
 ## 计划
 
