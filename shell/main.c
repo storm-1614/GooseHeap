@@ -20,6 +20,8 @@
 #define TX_BUFFER_SIZE 64
 #define MAX_ARG_SIZE 8
 
+#define TASK_STACK_SIZE 96
+
 volatile char rx_buffer[RX_BUFFER_SIZE];
 volatile uint8_t rx_head = 0;
 volatile uint8_t rx_tail = 0;
@@ -32,6 +34,56 @@ volatile uint32_t tick = 0;
 
 char cmd_buffer[CMD_SIZE];
 uint8_t cmd_index = 0;
+
+// 任务
+typedef struct
+{
+    uint16_t sp; // 任务的 SP 值
+} Task;
+
+// 创建两个任务
+Task task1;
+Task task2;
+
+uint8_t task1_stack[TASK_STACK_SIZE];
+uint8_t task2_stack[TASK_STACK_SIZE];
+
+// 入栈
+static void stack_push(uint8_t **sp, uint8_t value)
+{
+    **sp = value; // 写栈
+    (*sp)--;      // SP 向低地址移动
+}
+
+/* 初始化任务
+ * 伪造初始上下文：
+ * r0
+ * SREG
+ * r1
+ * r2-r31
+ */
+void task_init(Task *task, uint8_t *stack, uint16_t stack_size, void (*entry)(void))
+{
+    uint8_t *sp = &stack[stack_size - 1];
+
+    // 函数入口地址
+    uint16_t pc = (uint16_t)entry;
+
+    stack_push(&sp, pc & 0xFF); // PC 低字节
+    stack_push(&sp, pc >> 8);   // PC 高字节
+
+    stack_push(&sp, 0x00); // r0 = 0
+    stack_push(&sp, 0x00); // SREG (中断关闭)
+
+    stack_push(&sp, 0x00); // r1 = 0
+
+    for (uint8_t r = 2; r <= 31; r++)
+    {
+        stack_push(&sp, 0x00); // r2-r31 = 0
+    }
+
+    task->sp = (uint16_t)sp; // SP
+}
 
 void uart_init(void)
 {
@@ -65,6 +117,67 @@ void timer1_init(void)
 
     // 64 分频
     TCCR1B |= (1 << CS11) | (1 << CS10);
+}
+
+__attribute__((naked, noreturn)) void os_start_first(void)
+{
+    asm volatile(
+        // 关闭中断
+        "cli\n\t"
+
+        // task1.sp
+        // task1        SP low
+        // task1 + 1    SP high
+        "lds r26, task1\n\t"
+        "lds r27, task1+1\n\t"
+
+        // CPU SP = task1.sp
+        "out __SP_H__, r27\n\t"
+        "out __SP_L__, r26\n\t"
+
+        // 恢复寄存器
+        "pop r31\n\t"
+        "pop r30\n\t"
+        "pop r29\n\t"
+        "pop r28\n\t"
+        "pop r27\n\t"
+        "pop r26\n\t"
+        "pop r25\n\t"
+        "pop r24\n\t"
+        "pop r23\n\t"
+        "pop r22\n\t"
+        "pop r21\n\t"
+        "pop r20\n\t"
+        "pop r19\n\t"
+        "pop r18\n\t"
+        "pop r17\n\t"
+        "pop r16\n\t"
+        "pop r15\n\t"
+        "pop r14\n\t"
+        "pop r13\n\t"
+        "pop r12\n\t"
+        "pop r11\n\t"
+        "pop r10\n\t"
+        "pop r9\n\t"
+        "pop r8\n\t"
+        "pop r7\n\t"
+        "pop r6\n\t"
+        "pop r5\n\t"
+        "pop r4\n\t"
+        "pop r3\n\t"
+        "pop r2\n\t"
+        "pop r1\n\t"
+
+        // SREG
+        "pop r0\n\t"
+        "out __SREG__, r0\n\t"
+
+        "pop r0\n\t"
+
+        // 返回地址
+        "ret\n\t"
+
+    );
 }
 
 // 接收字符
@@ -151,6 +264,28 @@ void uart_put_hex16(uint16_t n)
     uart_put_hex_digit((n >> 8) & 0xF);
     uart_put_hex_digit((n >> 4) & 0xF);
     uart_put_hex_digit(n & 0xF);
+}
+
+void task1_func(void)
+{
+    sei();
+
+    uart_puts("task1 running\r\n");
+
+    PORTB |= (1 << PB5);
+
+    while (1)
+    {
+        // TODO
+    }
+}
+
+void task2_func(void)
+{
+    while (1)
+    {
+        // TODO
+    }
 }
 
 void shell_init()
@@ -383,7 +518,22 @@ int main(void)
     uart_init();
     port_init();
     timer1_init();
+
+    task_init(&task1, task1_stack, TASK_STACK_SIZE, task1_func);
+    task_init(&task2, task2_stack, TASK_STACK_SIZE, task2_func);
+
+    os_start_first();
+
     sei(); // 启用全局中断
+
+    // DEBUG
+    uart_puts("task1.sp = ");
+    uart_put_hex16(task1.sp);
+    uart_puts("\r\n");
+    uart_puts("task2.sp = ");
+    uart_put_hex16(task2.sp);
+    uart_puts("\r\n");
+
     shell_init();
 
     while (1)
