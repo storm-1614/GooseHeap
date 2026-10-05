@@ -51,8 +51,9 @@ void uart_putc(char c)
     uint8_t next = (tx_head + 1) % TX_BUFFER_SIZE;
 
     // 如果缓冲区满了就阻塞等待
-    while (next == tx_tail)
+    if (next == tx_tail)
     {
+        return;
     }
 
     // 写入缓冲区

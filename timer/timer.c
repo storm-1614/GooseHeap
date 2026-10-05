@@ -1,6 +1,7 @@
 #include <avr/interrupt.h>
 #include <avr/io.h>
 
+#include "../task/task.h"
 #include "timer.h"
 
 volatile uint32_t tick = 0;
@@ -12,7 +13,7 @@ void timer1_init(void)
     TCCR1B |= (1 << WGM12);
 
     // 每 1 ms
-    OCR1A = 249;
+    OCR1A = 2499;
 
     // 开启 Compare 中断
     TIMSK1 |= (1 << OCIE1A);
@@ -21,7 +22,14 @@ void timer1_init(void)
     TCCR1B |= (1 << CS11) | (1 << CS10);
 }
 
-ISR(TIMER1_COMPA_vect)
+#define CONTEXT_SWITCH_ISR()                                                                                           \
+    SAVE_CONTEXT()                                                                                                     \
+    "call schedule_next\n\t" RESTORE_CONTEXT() "reti\n\t"
+
+ISR(TIMER1_COMPA_vect, ISR_NAKED)
 {
-    tick++;
+    //tick++;
+    asm volatile (
+        CONTEXT_SWITCH_ISR()
+    );
 }
