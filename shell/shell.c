@@ -5,6 +5,7 @@
  * Date: 2026-10-05
  */
 
+#include <avr/interrupt.h>
 #include <avr/io.h>
 #include <stdint.h>
 #include <string.h>
@@ -13,6 +14,7 @@
 #include "shell.h"
 #include "../timer/timer.h"
 #include "../uart/uart.h"
+#include "../task/task.h"
 
 #define CMD_SIZE 32
 #define MAX_ARG_SIZE 8
@@ -241,5 +243,23 @@ void shell_input(char c)
             cmd_index++;
             uart_putc(c);
         }
+    }
+}
+
+void shell_task_func(void)
+{
+    sei();
+    shell_init();
+
+    while(1)
+    {
+        char c;
+
+        if (uart_try_getc(&c))
+        {
+            shell_input(c);
+        }
+
+        os_yield();
     }
 }

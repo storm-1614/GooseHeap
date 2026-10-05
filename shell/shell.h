@@ -4,5 +4,6 @@
 void shell_init(void);
 void shell_execute(char *cmd);
 void shell_input(char c);
+void shell_task_func(void);
 
 #endif

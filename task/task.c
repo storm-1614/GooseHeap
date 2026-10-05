@@ -1,16 +1,24 @@
 #include <avr/interrupt.h>
 #include <avr/io.h>
 
-#include "task.h"
 #include "../uart/uart.h"
+#include "task.h"
+
+#define MAX_TASK 3
+
+static Task *task_table[MAX_TASK];
+static uint8_t task_count = 0;
+static uint8_t current_task_index = 0;
 
 Task *current_task;
 // 创建两个任务
 Task task1;
 Task task2;
+Task shell_task;
 
 uint8_t task1_stack[TASK_STACK_SIZE];
 uint8_t task2_stack[TASK_STACK_SIZE];
+uint8_t shell_task_stack[TASK_STACK_SIZE];
 
 // 入栈
 static void stack_push(uint8_t **sp, uint8_t value)
@@ -47,6 +55,11 @@ void task_init(Task *task, uint8_t *stack, uint16_t stack_size, void (*entry)(vo
     }
 
     task->sp = (uint16_t)sp; // SP
+
+    if (task_count < MAX_TASK)
+    {
+        task_table[task_count++] = task;
+    }
 }
 
 __attribute__((naked, noreturn)) void os_start_first(void)
@@ -112,14 +125,14 @@ __attribute__((naked, noreturn)) void os_start_first(void)
 
 __attribute__((noinline)) void schedule_next(void)
 {
-    if (current_task == &task1)
+    if (task_count == 0)
     {
-        current_task = &task2;
+        return;
     }
-    else
-    {
-        current_task = &task1;
-    }
+
+    current_task_index = (current_task_index + 1) % task_count;
+
+    current_task = task_table[current_task_index];
 }
 
 // 切换任务
@@ -182,7 +195,7 @@ __attribute__((naked, noinline)) void os_yield(void)
         "st X, r25\n\t"
 
         "call schedule_next\n\t"
-        
+
         "lds r26, current_task\n\t"
         "lds r27, current_task+1\n\t"
 
@@ -192,7 +205,7 @@ __attribute__((naked, noinline)) void os_yield(void)
         "out __SP_H__, r25\n\t"
         "out __SP_L__, r24\n\t"
 
-         // 恢复寄存器
+        // 恢复寄存器
         "pop r31\n\t"
         "pop r30\n\t"
         "pop r29\n\t"
@@ -246,7 +259,6 @@ void task1_func(void)
     while (1)
     {
         PORTB |= (1 << PB5);
-        uart_puts("task1\r\n");
 
         os_yield();
     }
@@ -261,8 +273,6 @@ void task2_func(void)
     while (1)
     {
         PORTB &= ~(1 << PB5);
-
-        uart_puts("task2\r\n");
         os_yield();
     }
 }

@@ -18,27 +18,9 @@ int main(void)
 
     task_init(&task1, task1_stack, TASK_STACK_SIZE, task1_func);
     task_init(&task2, task2_stack, TASK_STACK_SIZE, task2_func);
+    task_init(&shell_task, shell_task_stack, TASK_STACK_SIZE, shell_task_func);
+
+    current_task = &task1;
 
     os_start_first();
-
-    sei(); // 启用全局中断
-
-    // DEBUG
-    uart_puts("task1.sp = ");
-    uart_put_hex16(task1.sp);
-    uart_puts("\r\n");
-    uart_puts("task2.sp = ");
-    uart_put_hex16(task2.sp);
-    uart_puts("\r\n");
-
-    shell_init();
-
-    while (1)
-    {
-        char c;
-        if (uart_try_getc(&c))
-        {
-            shell_input(c);
-        }
-    }
 }

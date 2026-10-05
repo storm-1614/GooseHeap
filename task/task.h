@@ -14,8 +14,10 @@ typedef struct
 extern Task *current_task;
 extern Task task1;
 extern Task task2;
+extern Task shell_task;
 extern uint8_t task1_stack[TASK_STACK_SIZE];
 extern uint8_t task2_stack[TASK_STACK_SIZE];
+extern uint8_t shell_task_stack[TASK_STACK_SIZE];
 
 void task_init(Task *task, uint8_t *stack, uint16_t stack_size, void (*entry)(void));
 __attribute__((naked, noreturn)) void os_start_first(void);
