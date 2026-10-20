@@ -1,14 +1,15 @@
 /* uart.c
- * 
+ *
  */
 
 #include <avr/interrupt.h>
 #include <avr/io.h>
+#include <util/atomic.h>
 
 #include "uart.h"
 
-#define RX_BUFFER_SIZE 64
-#define TX_BUFFER_SIZE 64
+#define RX_BUFFER_SIZE 128
+#define TX_BUFFER_SIZE 128
 
 volatile char rx_buffer[RX_BUFFER_SIZE];
 volatile uint8_t rx_head = 0;
@@ -48,20 +49,24 @@ BOOL uart_try_getc(char *c)
 
 void uart_putc(char c)
 {
-    uint8_t next = (tx_head + 1) % TX_BUFFER_SIZE;
-
-    // 如果缓冲区满了就阻塞等待
-    if (next == tx_tail)
+    for (;;)
     {
-        return;
+        ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
+        {
+
+            uint8_t next = (tx_head + 1) % TX_BUFFER_SIZE;
+
+            if (next != tx_tail)
+            {
+                tx_buffer[tx_head] = c;
+                tx_head = next;
+                // 置位 UDRIE0 启用 USART_UDRE 中断
+                UCSR0B |= (1 << UDRIE0);
+                return;
+            }
+
+        }
     }
-
-    // 写入缓冲区
-    tx_buffer[tx_head] = c;
-    tx_head = next;
-
-    // 置位 UDRIE0 启用 USART_UDRE 中断
-    UCSR0B |= (1 << UDRIE0);
 }
 
 void uart_puts(const char *s)
