@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 
+#define MAX_TASK 3
+
 #define SAVE_CONTEXT(sreg_patch)                                                                                       \
     "push r0\n\t"                                                                                                      \
     "in r0, __SREG__\n\t" sreg_patch "cli\n\t"                                                                         \
@@ -90,10 +92,19 @@
 
 #define TASK_STACK_SIZE 192
 
+// 任务状态
+typedef enum
+{
+    TASK_READY,
+    TASK_BLOCKED
+} TaskState;
+
 // 任务
 typedef struct
 {
     uint16_t sp; // 任务的 SP 值
+    TaskState state;
+    uint32_t wake_tick;
 } Task;
 
 extern Task *current_task;
@@ -110,5 +121,9 @@ __attribute__((noinline)) void schedule_next(void);
 __attribute__((naked, noinline)) void os_yield(void);
 void task1_func(void);
 void task2_func(void);
+
+void task_wake_expired(uint32_t now);
+
+void os_sleep(uint32_t ms);
 
 #endif

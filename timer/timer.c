@@ -25,11 +25,12 @@ void timer1_init(void)
 void tick_increment()
 {
     tick++;
+
+    task_wake_expired(tick);
 }
 
 #define CONTEXT_SWITCH_ISR()                                                                                           \
-    SAVE_CONTEXT("set\n\t"                                                                                             \
-                 "bld r0, 7\n\t")                                                                                      \
+    SAVE_CONTEXT("")                                                                                                   \
     "call tick_increment\n\t"                                                                                          \
     "call schedule_next\n\t" RESTORE_CONTEXT() "reti\n\t"
 

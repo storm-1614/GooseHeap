@@ -1,10 +1,10 @@
 #include <avr/interrupt.h>
 #include <avr/io.h>
 
+#include "../timer/timer.h"
 #include "../uart/uart.h"
-#include "task.h"
 
-#define MAX_TASK 3
+#include "task.h"
 
 static Task *task_table[MAX_TASK];
 static uint8_t task_count = 0;
@@ -45,7 +45,7 @@ void task_init(Task *task, uint8_t *stack, uint16_t stack_size, void (*entry)(vo
     stack_push(&sp, pc >> 8);   // PC 高字节
 
     stack_push(&sp, 0x00); // r0 = 0
-    stack_push(&sp, 0x80); // SREG.I = 1
+    stack_push(&sp, 0x00); // SREG.I = 0
 
     stack_push(&sp, 0x00); // r1 = 0
 
@@ -54,7 +54,9 @@ void task_init(Task *task, uint8_t *stack, uint16_t stack_size, void (*entry)(vo
         stack_push(&sp, 0x00); // r2-r31 = 0
     }
 
-    task->sp = (uint16_t)sp; // SP
+    task->sp = (uint16_t)sp;  // SP
+    task->state = TASK_READY; // 任务状态
+    task->wake_tick = 0;      // 唤醒时间
 
     if (task_count < MAX_TASK)
     {
@@ -118,28 +120,31 @@ __attribute__((naked, noreturn)) void os_start_first(void)
         "pop r0\n\t"
 
         // 返回地址
-        "ret\n\t"
+        "reti\n\t"
 
     );
 }
 
 __attribute__((noinline)) void schedule_next(void)
 {
-    if (task_count == 0)
+    for (uint8_t n = 0; n < task_count; n++)
     {
-        return;
+        uint8_t next = (current_task_index + 1 + n) % task_count;
+
+        if (task_table[next]->state == TASK_READY)
+        {
+            current_task_index = next;
+            current_task = task_table[next];
+            return;
+        }
     }
-
-    current_task_index = (current_task_index + 1) % task_count;
-
-    current_task = task_table[current_task_index];
+    // FIX: 所有任务都 BLOCKED 必须有 Idle Task 兜底
 }
-
 
 // 切换任务
 __attribute__((naked, noinline)) void os_yield(void)
 {
-    asm volatile(SAVE_CONTEXT("") "call schedule_next\n\t" RESTORE_CONTEXT() "ret\n\t");
+    asm volatile(SAVE_CONTEXT("") "call schedule_next\n\t" RESTORE_CONTEXT() "reti\n\t");
 }
 
 void task1_func(void)
@@ -152,8 +157,29 @@ void task1_func(void)
     {
         PORTB |= (1 << PB5);
 
-//        os_yield();
+        os_sleep(500);
+        //        os_yield();
     }
+}
+
+__attribute__((naked, noinline)) void os_switch_blocked(void)
+{
+    asm volatile(SAVE_CONTEXT("") "call schedule_next\n\t" RESTORE_CONTEXT() "reti\n\t");
+}
+
+// 任务睡眠
+void os_sleep(uint32_t ms)
+{
+    if (ms == 0)
+        return;
+    cli();
+
+    current_task->wake_tick = tick + ms;
+    current_task->state = TASK_BLOCKED;
+
+    os_switch_blocked();
+
+    asm volatile("" ::: "memory");
 }
 
 void task2_func(void)
@@ -165,6 +191,20 @@ void task2_func(void)
     while (1)
     {
         PORTB &= ~(1 << PB5);
-//        os_yield();
+        os_sleep(1000);
+        //        os_yield();
+    }
+}
+
+void task_wake_expired(uint32_t now)
+{
+    for (int i = 0; i < task_count; i++)
+    {
+        Task *task = task_table[i];
+
+        if (task->state == TASK_BLOCKED && (int32_t)(now - task->wake_tick) >= 0)
+        {
+            task->state = TASK_READY;
+        }
     }
 }
