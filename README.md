@@ -7,7 +7,7 @@ GooseHeap(鹅堆) OS 一个运行在 Arduino UNO (ATmega328P ) 上的两个任�
 > 在 Arduino UNO(ATmega328P) 拿裸机 C 语言在 avr-libc 的基础上，基于 UART 做了个串口 Shell。  
 > 未来可能慢慢做成类似 FreeRTOS 那样的吧，最大憧憬。  
 
-慢慢有了 RTOS 雏形。初步实现两个任务的调度。  
+慢慢有了 RTOS 雏形。初步实现抢占式调度。  
 ## 开发环境
 我是用的 ArchLinux，其他发行版我让 chatGPT 写的……  
 
@@ -46,8 +46,9 @@ Windows 下感觉很麻烦，没探索。
     * 独立任务栈
     * 初始化、保存、恢复 CPU context
     * 最简的 `os_start_first`, `os_yield()`  
-    * 三任务协作式时间片轮转调度
-    * 简陋的抢占式调度
+    * ~~三任务协作式时间片轮转调度(已废弃)~~
+    * 可用的抢占式调度
+    * os_sleep
 
 ## 计划
 
