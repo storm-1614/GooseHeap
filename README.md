@@ -1,6 +1,6 @@
 # 🪿 GooseHeap OS
 
-GooseHeap(鹅堆) OS 一个运行在 Arduino UNO (ATmega328P ) 上的两个任务轮转的最简 RTOS。  
+GooseHeap(鹅堆) OS 一个运行在 Arduino UNO (ATmega328P ) 上的抢占式调度最简 RTOS。  
 使用裸机 C + avr-libc 开发。  
 
 > 最开始：  
@@ -51,5 +51,5 @@ Windows 下感觉很麻烦，没探索。
     * os_sleep
 
 ## 计划
-
+- 适配 Arduino 函数
 
