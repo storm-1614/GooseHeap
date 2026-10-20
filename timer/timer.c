@@ -28,7 +28,8 @@ void tick_increment()
 }
 
 #define CONTEXT_SWITCH_ISR()                                                                                           \
-    SAVE_CONTEXT()                                                                                                     \
+    SAVE_CONTEXT("set\n\t"                                                                                             \
+                 "bld r0, 7\n\t")                                                                                      \
     "call tick_increment\n\t"                                                                                          \
     "call schedule_next\n\t" RESTORE_CONTEXT() "reti\n\t"
 

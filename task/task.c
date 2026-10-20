@@ -45,7 +45,7 @@ void task_init(Task *task, uint8_t *stack, uint16_t stack_size, void (*entry)(vo
     stack_push(&sp, pc >> 8);   // PC 高字节
 
     stack_push(&sp, 0x00); // r0 = 0
-    stack_push(&sp, 0x00); // SREG (中断关闭)
+    stack_push(&sp, 0x80); // SREG.I = 1
 
     stack_push(&sp, 0x00); // r1 = 0
 
@@ -139,7 +139,7 @@ __attribute__((noinline)) void schedule_next(void)
 // 切换任务
 __attribute__((naked, noinline)) void os_yield(void)
 {
-    asm volatile(SAVE_CONTEXT() "call schedule_next\n\t" RESTORE_CONTEXT() "ret\n\t");
+    asm volatile(SAVE_CONTEXT("") "call schedule_next\n\t" RESTORE_CONTEXT() "ret\n\t");
 }
 
 void task1_func(void)

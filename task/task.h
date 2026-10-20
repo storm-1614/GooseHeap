@@ -3,10 +3,9 @@
 
 #include <stdint.h>
 
-#define SAVE_CONTEXT()                                                                                                 \
+#define SAVE_CONTEXT(sreg_patch)                                                                                       \
     "push r0\n\t"                                                                                                      \
-    "in r0, __SREG__\n\t"                                                                                              \
-    "cli\n\t"                                                                                                          \
+    "in r0, __SREG__\n\t" sreg_patch "cli\n\t"                                                                         \
     "push r0\n\t"                                                                                                      \
     "push r1\n\t"                                                                                                      \
     "clr r1\n\t"                                                                                                       \
