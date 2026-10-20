@@ -13,7 +13,7 @@ void timer1_init(void)
     TCCR1B |= (1 << WGM12);
 
     // 每 1 ms
-    OCR1A = 2499;
+    OCR1A = 249;
 
     // 开启 Compare 中断
     TIMSK1 |= (1 << OCIE1A);

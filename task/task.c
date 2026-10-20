@@ -152,7 +152,7 @@ void task1_func(void)
     {
         PORTB |= (1 << PB5);
 
-        os_yield();
+//        os_yield();
     }
 }
 
@@ -165,6 +165,6 @@ void task2_func(void)
     while (1)
     {
         PORTB &= ~(1 << PB5);
-        os_yield();
+//        os_yield();
     }
 }

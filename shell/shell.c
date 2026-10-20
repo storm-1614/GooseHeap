@@ -263,6 +263,6 @@ void shell_task_func(void)
             shell_input(c);
         }
 
-        os_yield();
+//        os_yield();
     }
 }
