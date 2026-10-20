@@ -22,14 +22,18 @@ void timer1_init(void)
     TCCR1B |= (1 << CS11) | (1 << CS10);
 }
 
+void tick_increment()
+{
+    tick++;
+}
+
 #define CONTEXT_SWITCH_ISR()                                                                                           \
     SAVE_CONTEXT()                                                                                                     \
+    "call tick_increment\n\t"                                                                                          \
     "call schedule_next\n\t" RESTORE_CONTEXT() "reti\n\t"
 
 ISR(TIMER1_COMPA_vect, ISR_NAKED)
 {
-    //tick++;
-    asm volatile (
-        CONTEXT_SWITCH_ISR()
-    );
+    // tick++;
+    asm volatile(CONTEXT_SWITCH_ISR());
 }
