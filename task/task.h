@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-#define MAX_TASK 3
+#define MAX_TASK 8
 
 #define SAVE_CONTEXT(sreg_patch)                                                                                       \
     "push r0\n\t"                                                                                                      \
