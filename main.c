@@ -20,6 +20,9 @@ int main(void)
     task_init(&task2, task2_stack, TASK_STACK_SIZE, task2_func);
     task_init(&shell_task, shell_task_stack, TASK_STACK_SIZE, shell_task_func);
 
+    // 空闲任务要放在最后初始化，使得其索引为 task_count - 1
+    task_init(&idle_task, idle_task_stack, TASK_STACK_SIZE, idle_task_func);
+
     current_task = &task1;
 
     os_start_first();

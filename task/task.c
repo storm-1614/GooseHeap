@@ -16,9 +16,12 @@ Task task1;
 Task task2;
 Task shell_task;
 
+Task idle_task;
+
 uint8_t task1_stack[TASK_STACK_SIZE];
 uint8_t task2_stack[TASK_STACK_SIZE];
 uint8_t shell_task_stack[TASK_STACK_SIZE];
+uint8_t idle_task_stack[TASK_STACK_SIZE];
 
 // 入栈
 static void stack_push(uint8_t **sp, uint8_t value)
@@ -125,20 +128,55 @@ __attribute__((naked, noreturn)) void os_start_first(void)
     );
 }
 
+__attribute__((naked, noinline)) void os_switch_blocked(void)
+{
+    asm volatile(SAVE_CONTEXT("") "call schedule_next\n\t" RESTORE_CONTEXT() "reti\n\t");
+}
+
+// 任务睡眠
+void os_sleep(uint32_t ms)
+{
+    // 防御式编程。防止 idle 意外调用 os_sleep
+    if (ms == 0 || current_task == &idle_task)
+        return;
+    cli();
+
+    current_task->wake_tick = tick + ms;
+    current_task->state = TASK_BLOCKED;
+
+    os_switch_blocked();
+
+    asm volatile("" ::: "memory");
+}
+
+// 空闲任务
+void idle_task_func(void)
+{
+    while (1)
+    {
+    }
+}
+
 __attribute__((noinline)) void schedule_next(void)
 {
     for (uint8_t n = 0; n < task_count; n++)
     {
         uint8_t next = (current_task_index + 1 + n) % task_count;
+        Task *candidate = task_table[next];
 
-        if (task_table[next]->state == TASK_READY)
+        if (candidate == &idle_task)
+            continue;
+
+        if (candidate->state == TASK_READY)
         {
             current_task_index = next;
             current_task = task_table[next];
             return;
         }
     }
-    // FIX: 所有任务都 BLOCKED 必须有 Idle Task 兜底
+
+    current_task_index = task_count - 1;
+    current_task = &idle_task;
 }
 
 // 切换任务
@@ -161,27 +199,6 @@ void task1_func(void)
         //        os_yield();
     }
 }
-
-__attribute__((naked, noinline)) void os_switch_blocked(void)
-{
-    asm volatile(SAVE_CONTEXT("") "call schedule_next\n\t" RESTORE_CONTEXT() "reti\n\t");
-}
-
-// 任务睡眠
-void os_sleep(uint32_t ms)
-{
-    if (ms == 0)
-        return;
-    cli();
-
-    current_task->wake_tick = tick + ms;
-    current_task->state = TASK_BLOCKED;
-
-    os_switch_blocked();
-
-    asm volatile("" ::: "memory");
-}
-
 void task2_func(void)
 {
     sei();
