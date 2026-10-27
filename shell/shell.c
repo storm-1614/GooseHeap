@@ -11,10 +11,10 @@
 #include <string.h>
 #include <util/atomic.h>
 
-#include "shell.h"
+#include "../task/task.h"
 #include "../timer/timer.h"
 #include "../uart/uart.h"
-#include "../task/task.h"
+#include "shell.h"
 
 #define CMD_SIZE 32
 #define MAX_ARG_SIZE 8
@@ -39,6 +39,7 @@ void cmd_help(void)
     uart_puts("uptime\r\n");
     uart_puts("sp\r\n");
     uart_puts("stack\r\n");
+    uart_puts("ps\r\n");
 }
 
 void cmd_led(uint8_t argc, char **argv)
@@ -134,6 +135,47 @@ void cmd_stack(void)
     uart_puts("foo returned\r\n");
 }
 
+void cmd_ps(void)
+{
+    uart_puts("NAME\tSTATE\tREMAIN\tSP\r\n");
+    for (uint8_t i = 0; i < MAX_TASK; i++)
+    {
+        Task snapshot;
+        BOOL running;
+        uint32_t remaining;
+        if (task_get_snapshot(i, &snapshot, &running, &remaining) == FALSE)
+        {
+            break;
+        }
+
+        if (running)
+            snapshot.sp = SP;
+
+        uart_puts(snapshot.name);
+        uart_putc('\t');
+        if (running)
+        {
+            uart_puts("RUNNING\t");
+        }
+        else if (snapshot.state == TASK_READY)
+        {
+            uart_puts("READY\t");
+        }
+        else if (snapshot.state == TASK_BLOCKED)
+        {
+            uart_puts("BLOCKED\t");
+        }
+        else
+        {
+            uart_puts("FAIL\t");
+        }
+        uart_put_u32(remaining);
+        uart_putc('\t');
+        uart_put_hex16(snapshot.sp);
+        uart_puts("\r\n");
+    }
+}
+
 int parse_args(char *line, char **argv, int max_args)
 {
     int count = 0;
@@ -207,6 +249,10 @@ void shell_execute(char *cmd)
     {
         cmd_stack();
     }
+    else if (strcmp(arg[0], "ps") == 0)
+    {
+        cmd_ps();
+    }
     else
     {
         uart_puts("unknown command\r\n");
@@ -254,7 +300,7 @@ void shell_task_func(void)
     sei();
     shell_init();
 
-    while(1)
+    while (1)
     {
         char c;
 
@@ -263,6 +309,6 @@ void shell_task_func(void)
             shell_input(c);
         }
 
-//        os_yield();
+        //        os_yield();
     }
 }

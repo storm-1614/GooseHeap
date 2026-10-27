@@ -1,5 +1,6 @@
 #include <avr/interrupt.h>
 #include <avr/io.h>
+#include <util/atomic.h>
 
 #include "../timer/timer.h"
 #include "../uart/uart.h"
@@ -37,7 +38,7 @@ static void stack_push(uint8_t **sp, uint8_t value)
  * r1
  * r2-r31
  */
-void task_init(Task *task, uint8_t *stack, uint16_t stack_size, void (*entry)(void))
+void task_init(Task *task, const char *name, uint8_t *stack, uint16_t stack_size, void (*entry)(void))
 {
     uint8_t *sp = &stack[stack_size - 1];
 
@@ -58,6 +59,7 @@ void task_init(Task *task, uint8_t *stack, uint16_t stack_size, void (*entry)(vo
     }
 
     task->sp = (uint16_t)sp;  // SP
+    task->name = name;        // 任务名
     task->state = TASK_READY; // 任务状态
     task->wake_tick = 0;      // 唤醒时间
 
@@ -224,4 +226,36 @@ void task_wake_expired(uint32_t now)
             task->state = TASK_READY;
         }
     }
+}
+
+BOOL task_get_snapshot(uint8_t idx, Task *snapshot, BOOL *running, uint32_t *remaining)
+{
+    if (snapshot == NULL || running == NULL || remaining == NULL)
+        return FALSE;
+
+    if (idx >= task_count)
+        return FALSE;
+
+    ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
+    {
+        *snapshot = *task_table[idx];
+        *running = (task_table[idx] == current_task);
+
+        if (*running)
+        {
+            snapshot->sp = SP;
+        }
+
+        *remaining = 0;
+
+        if (snapshot->state == TASK_BLOCKED)
+        {
+            int32_t diff = (int32_t)(snapshot->wake_tick - tick);
+            if (diff > 0)
+            {
+                *remaining = (uint32_t)diff;
+            }
+        }
+    }
+    return TRUE;
 }
