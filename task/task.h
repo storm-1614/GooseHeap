@@ -134,6 +134,6 @@ void task_wake_expired(uint32_t now);
 
 void os_sleep(uint32_t ms);
 
-BOOL task_get_snapshot(uint8_t idx, Task *snapshot, BOOL *running);
+BOOL task_get_snapshot(uint8_t idx, Task *snapshot, BOOL *running, uint32_t *remaining);
 
 #endif

@@ -228,16 +228,34 @@ void task_wake_expired(uint32_t now)
     }
 }
 
-BOOL task_get_snapshot(uint8_t idx, Task *snapshot, BOOL *running)
+BOOL task_get_snapshot(uint8_t idx, Task *snapshot, BOOL *running, uint32_t *remaining)
 {
-    if (idx >= task_count)
-    {
+    if (snapshot == NULL || running == NULL || remaining == NULL)
         return FALSE;
-    }
+
+    if (idx >= task_count)
+        return FALSE;
+
     ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
     {
         *snapshot = *task_table[idx];
         *running = (task_table[idx] == current_task);
+
+        if (*running)
+        {
+            snapshot->sp = SP;
+        }
+
+        *remaining = 0;
+
+        if (snapshot->state == TASK_BLOCKED)
+        {
+            int32_t diff = (int32_t)(snapshot->wake_tick - tick);
+            if (diff > 0)
+            {
+                *remaining = (uint32_t)diff;
+            }
+        }
     }
     return TRUE;
 }

@@ -137,12 +137,13 @@ void cmd_stack(void)
 
 void cmd_ps(void)
 {
-    uart_puts("NAME\tSTATE\tWAKE\tSP\r\n");
+    uart_puts("NAME\tSTATE\tREMAIN\tSP\r\n");
     for (uint8_t i = 0; i < MAX_TASK; i++)
     {
         Task snapshot;
         BOOL running;
-        if (task_get_snapshot(i, &snapshot, &running) == FALSE)
+        uint32_t remaining;
+        if (task_get_snapshot(i, &snapshot, &running, &remaining) == FALSE)
         {
             break;
         }
@@ -168,7 +169,7 @@ void cmd_ps(void)
         {
             uart_puts("FAIL\t");
         }
-        uart_put_u32(snapshot.wake_tick);
+        uart_put_u32(remaining);
         uart_putc('\t');
         uart_put_hex16(snapshot.sp);
         uart_puts("\r\n");
