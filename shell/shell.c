@@ -140,25 +140,15 @@ void cmd_ps(void)
     uart_puts("NAME\tSTATE\tWAKE\tSP\r\n");
     for (uint8_t i = 0; i < MAX_TASK; i++)
     {
-        Task *source = task_get_snapshot(i);
-
-        if (source == NULL)
+        Task snapshot;
+        BOOL running;
+        if (task_get_snapshot(i, &snapshot, &running) == FALSE)
         {
             break;
         }
 
-        Task snapshot;
-        uint8_t running;
-
-        ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
-        {
-            snapshot = *source;
-            running = (source == current_task);
-
-            if (running)
-                snapshot.sp = SP;
-        }
-        source = NULL;
+        if (running)
+            snapshot.sp = SP;
 
         uart_puts(snapshot.name);
         uart_putc('\t');

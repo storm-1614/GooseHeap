@@ -2,6 +2,8 @@
 #define TASK_H
 
 #include <stdint.h>
+#include <string.h>
+#include "../include/bool.h"
 
 #define MAX_TASK 8
 
@@ -132,5 +134,6 @@ void task_wake_expired(uint32_t now);
 
 void os_sleep(uint32_t ms);
 
-Task *task_get_snapshot(uint8_t idx);
+BOOL task_get_snapshot(uint8_t idx, Task *snapshot, BOOL *running);
+
 #endif

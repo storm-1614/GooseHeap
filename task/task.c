@@ -1,6 +1,5 @@
 #include <avr/interrupt.h>
 #include <avr/io.h>
-#include <string.h>
 #include <util/atomic.h>
 
 #include "../timer/timer.h"
@@ -229,16 +228,16 @@ void task_wake_expired(uint32_t now)
     }
 }
 
-Task *task_get_snapshot(uint8_t idx)
+BOOL task_get_snapshot(uint8_t idx, Task *snapshot, BOOL *running)
 {
-    Task *snapshot;
     if (idx >= task_count)
     {
-        return NULL;
+        return FALSE;
     }
     ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
     {
-        snapshot = task_table[idx];
+        *snapshot = *task_table[idx];
+        *running = (task_table[idx] == current_task);
     }
-    return snapshot;
+    return TRUE;
 }
