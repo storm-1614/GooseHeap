@@ -1,5 +1,7 @@
 #include <avr/interrupt.h>
 #include <avr/io.h>
+#include <string.h>
+#include <util/atomic.h>
 
 #include "../timer/timer.h"
 #include "../uart/uart.h"
@@ -37,7 +39,7 @@ static void stack_push(uint8_t **sp, uint8_t value)
  * r1
  * r2-r31
  */
-void task_init(Task *task, uint8_t *stack, uint16_t stack_size, void (*entry)(void))
+void task_init(Task *task, const char *name, uint8_t *stack, uint16_t stack_size, void (*entry)(void))
 {
     uint8_t *sp = &stack[stack_size - 1];
 
@@ -58,6 +60,7 @@ void task_init(Task *task, uint8_t *stack, uint16_t stack_size, void (*entry)(vo
     }
 
     task->sp = (uint16_t)sp;  // SP
+    task->name = name;        // 任务名
     task->state = TASK_READY; // 任务状态
     task->wake_tick = 0;      // 唤醒时间
 
@@ -224,4 +227,18 @@ void task_wake_expired(uint32_t now)
             task->state = TASK_READY;
         }
     }
+}
+
+Task *task_get_snapshot(uint8_t idx)
+{
+    Task *snapshot;
+    if (idx >= task_count)
+    {
+        return NULL;
+    }
+    ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
+    {
+        snapshot = task_table[idx];
+    }
+    return snapshot;
 }

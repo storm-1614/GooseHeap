@@ -99,12 +99,15 @@ typedef enum
     TASK_BLOCKED
 } TaskState;
 
-// 任务
+/* 任务结构体
+ * sp 放在第一个成员使得内联汇编获取结构体地址就可以直接访问 SP
+ */
 typedef struct
 {
-    uint16_t sp; // 任务的 SP 值
-    TaskState state;
-    uint32_t wake_tick;
+    uint16_t sp;        // 任务的 SP 值
+    const char *name;   // 任务名称
+    TaskState state;    // 任务状态
+    uint32_t wake_tick; // 唤醒时间
 } Task;
 
 extern Task *current_task;
@@ -117,7 +120,7 @@ extern uint8_t task2_stack[TASK_STACK_SIZE];
 extern uint8_t shell_task_stack[TASK_STACK_SIZE];
 extern uint8_t idle_task_stack[TASK_STACK_SIZE];
 
-void task_init(Task *task, uint8_t *stack, uint16_t stack_size, void (*entry)(void));
+void task_init(Task *task, const char *name, uint8_t *stack, uint16_t stack_size, void (*entry)(void));
 __attribute__((naked, noreturn)) void os_start_first(void);
 __attribute__((noinline)) void schedule_next(void);
 __attribute__((naked, noinline)) void os_yield(void);
@@ -129,4 +132,5 @@ void task_wake_expired(uint32_t now);
 
 void os_sleep(uint32_t ms);
 
+Task *task_get_snapshot(uint8_t idx);
 #endif
