@@ -162,7 +162,11 @@ void cmd_ps(void)
 
         uart_puts(snapshot.name);
         uart_putc('\t');
-        if (snapshot.state == TASK_READY)
+        if (running)
+        {
+            uart_puts("RUNNING\t");
+        }
+        else if (snapshot.state == TASK_READY)
         {
             uart_puts("READY\t");
         }
